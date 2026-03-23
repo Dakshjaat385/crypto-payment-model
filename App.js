@@ -1,25 +1,49 @@
 import React, { useState } from 'react';
-import { Wallet, ShieldCheck, Zap, X, Plus, LogOut, CheckCircle2 } from 'lucide-react';
+import { Wallet, ShieldCheck, Zap, Plus, LogOut, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('landing');
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [walletConnected, setWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState(''); // Asli address save karne ke liye naya state
 
+  // Dummy subscriptions data
   const [subscriptions, setSubscriptions] = useState([
     { id: 1, name: 'Web3 VPN Services', amount: '10', token: 'USDC', nextBilling: 'In 5 days', status: 'Active' },
     { id: 2, name: 'AI Research Newsletter', amount: '15', token: 'USDC', nextBilling: 'In 12 days', status: 'Active' },
     { id: 3, name: 'Decentralized Hosting', amount: '25', token: 'USDC', nextBilling: 'In 20 days', status: 'Active' },
   ]);
 
-  const handleConnectWallet = () => {
-    setWalletConnected(true);
-    setCurrentScreen('dashboard');
+  // ASLI WALLET CONNECTION LOGIC
+  const handleConnectWallet = async () => {
+    // Check karte hain ki browser mein MetaMask install hai ya nahi
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        // MetaMask popup open karne ki request
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        
+        // Jo address mila use save karo aur dashboard par bhejo
+        setWalletAddress(accounts[0]);
+        setWalletConnected(true);
+        setCurrentScreen('dashboard');
+      } catch (error) {
+        console.error("User ne connection cancel kar diya", error);
+        alert("Wallet connect karna zaroori hai!");
+      }
+    } else {
+      // Agar MetaMask nahi hai toh alert dikhao
+      alert('Bhai, pehle MetaMask extension install karo!');
+    }
   };
 
   const handleDisconnect = () => {
     setWalletConnected(false);
+    setWalletAddress('');
     setCurrentScreen('landing');
+  };
+
+  // Address ko chhota dikhane ka function (e.g., 0x1234...abcd)
+  const formatAddress = (address) => {
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
   return (
@@ -31,7 +55,7 @@ export default function App() {
           </h1>
           {walletConnected ? (
             <button onClick={handleDisconnect} className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-500">
-              <LogOut className="h-4 w-4" /> Disconnect 0x...4A2b
+              <LogOut className="h-4 w-4" /> Disconnect {formatAddress(walletAddress)}
             </button>
           ) : null}
         </header>
@@ -44,7 +68,7 @@ export default function App() {
               onClick={handleConnectWallet}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2 mx-auto"
             >
-              <Wallet className="h-5 w-5" /> Connect Wallet
+              <Wallet className="h-5 w-5" /> Connect MetaMask
             </button>
           </div>
         )}
